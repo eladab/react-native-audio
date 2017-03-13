@@ -155,47 +155,30 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     }
   }
 
+
   @ReactMethod
-  public void startRecording(Promise promise){
-    if (recorder == null){
-      logAndRejectPromise(promise, "RECORDING_NOT_PREPARED", "Please call prepareRecordingAtPath before starting recording");
-      return;
-    }
-    if (isRecording){
-      logAndRejectPromise(promise, "INVALID_STATE", "Please call stopRecording before starting recording");
-      return;
-    }
-    recorder.start();
-    isRecording = true;
-    startTimer();
-    promise.resolve(currentOutputFile);
+  public void startRecording(Promise promise){ 
+    if (recorder == null){ 
+      Log.e("RECORDING_NOT_PREPARED", "Please call prepareRecordingAtPath before starting recording"); 
+      promise.reject("RECORDING_NOT_PREPARED", "Please call prepareRecordingAtPath before starting recording"); 
+      return;  
+    } 
+    if (!isRecording){ 
+      recorder.start(); 
+      isRecording = true; 
+      promise.resolve(currentOutputFile);  
+    } 
   }
 
   @ReactMethod
-  public void stopRecording(Promise promise){
-    if (!isRecording){
-      logAndRejectPromise(promise, "INVALID_STATE", "Please call startRecording before stopping recording");
-      return;
-    }
-
-    stopTimer();
-    isRecording = false;
-
-    try {
-      recorder.stop();
+  public void stopRecording(Promise promise){ 
+    if (isRecording){ 
+      recorder.stop(); 
+      isRecording = false; 
       recorder.release();
-    }
-    catch (final RuntimeException e) {
-      // https://developer.android.com/reference/android/media/MediaRecorder.html#stop()
-      logAndRejectPromise(promise, "RUNTIME_EXCEPTION", "No valid audio data received. You may be using a device that can't record audio.");
-      return;
-    }
-    finally {
-      recorder = null;
-    }
-
-    promise.resolve(currentOutputFile);
-    sendEvent("recordingFinished", null);
+      promise.resolve(currentOutputFile);
+      sendEvent("recordingFinished", null);
+    }  
   }
 
   @ReactMethod
